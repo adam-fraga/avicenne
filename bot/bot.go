@@ -1,13 +1,14 @@
 package bot
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
+
+	h "github.com/adam-fraga/avicenne/handlers"
 )
 
 var BotToken string
@@ -36,7 +37,6 @@ func Run() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
-
 }
 
 func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
@@ -50,59 +50,48 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 
 	// Gérer les différentes commandes
 	switch {
+	//QUIT
+	case strings.Contains(userMessage, "!quit"):
+		// Send a confirmation message
+		discord.ChannelMessageSend(message.ChannelID, "Avicenne est maintenant hors ligne... Bye!")
+		err := discord.Close()
+		if err != nil {
+			discord.ChannelMessageSend(message.ChannelID, "Error while disconnecting: "+err.Error())
+		}
+	//HELP
 	case strings.Contains(userMessage, "!help"):
-		discord.ChannelMessageSend(message.ChannelID, "Salut ! Je suis Avicenne, ton assistant intelligent 🤖. Besoin d'aide ? Tape !help 🚀. Une question ? Utilise !ask 💡")
+		h.Help(discord, *message)
+	//ASK
 	case strings.HasPrefix(userMessage, "!ask"):
-		// Supprimer le préfixe "!ask " du message de l'utilisateur
 		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!ask"))
-
-		// Envoyer la requête à l'API OpenAI
-		res, err := SendRequest(os.Getenv("API_URL"), os.Getenv("API_TOKEN"), userPrompt)
+		err := h.Ask(discord, message, userPrompt)
 		if err != nil {
 			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
-			log.Printf("Erreur lors de l'envoi de la requête : %v", err)
 			return
 		}
-
-		// Analyser la réponse de l'API
-		var apiResponse map[string]interface{}
-		if err := json.Unmarshal([]byte(res), &apiResponse); err != nil {
-			discord.ChannelMessageSend(message.ChannelID, "Désolé, je n'ai pas pu traiter la réponse.")
-			log.Printf("Erreur lors de l'analyse de la réponse API : %v", err)
+	//ASK PRIVATE
+	case strings.Contains(userMessage, "!private"):
+		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!ask private"))
+		err := h.AskPrivate(discord, message, userPrompt)
+		if err != nil {
+			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
 		}
-
-		// Extraire le message de l'assistant de la réponse
-		choices, ok := apiResponse["choices"].([]interface{})
-		if !ok || len(choices) == 0 {
-			discord.ChannelMessageSend(message.ChannelID, "Désolé, je n'ai pas obtenu de réponse valide.")
-			log.Printf("Réponse API invalide : %v", apiResponse)
+	//TRANSLATE
+	case strings.HasPrefix(userMessage, "!translate"):
+		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!translate"))
+		err := h.Translate(discord, message, userPrompt)
+		if err != nil {
+			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
 		}
-
-		firstChoice, ok := choices[0].(map[string]interface{})
-		if !ok {
-			discord.ChannelMessageSend(message.ChannelID, "Désolé, je n'ai pas pu interpréter la réponse.")
-			log.Printf("Format de choix invalide : %v", choices[0])
+	//SPELLCHECK
+	case strings.HasPrefix(userMessage, "!spellcheck"):
+		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!spellcheck"))
+		err := h.Spellcheck(discord, message, userPrompt)
+		if err != nil {
+			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
 		}
-
-		assistantMessage, ok := firstChoice["message"].(map[string]interface{})
-		if !ok {
-			discord.ChannelMessageSend(message.ChannelID, "Désolé, je n'ai pas trouvé la réponse de l'assistant.")
-			log.Printf("Format du message invalide : %v", firstChoice["message"])
-			return
-		}
-
-		content, ok := assistantMessage["content"].(string)
-		if !ok {
-			discord.ChannelMessageSend(message.ChannelID, "Désolé, la réponse de l'assistant est invalide.")
-			log.Printf("Format du contenu invalide : %v", assistantMessage["content"])
-			return
-		}
-
-		// Send the assistant's message to the Discord channel
-		response := fmt.Sprintf("**🗣️ Ta question :** %s\n\n%s", userPrompt, content)
-		discord.ChannelMessageSend(message.ChannelID, response)
 	}
 }
