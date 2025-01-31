@@ -8,7 +8,8 @@ import (
 	"os/signal"
 	"strings"
 
-	h "github.com/adam-fraga/avicenne/handlers"
+	auth "github.com/adam-fraga/avicenne/handlers/auth"
+	cmd "github.com/adam-fraga/avicenne/handlers/commands"
 )
 
 var BotToken string
@@ -50,8 +51,28 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 
 	// Gérer les différentes commandes
 	switch {
+	//WIPE MESSAGES
+	case strings.Contains(userMessage, "!wipe"):
+		isAdmin := auth.IsDiscordAdmin(discord, *message)
+
+		if !isAdmin {
+			return
+		}
+
+		err := cmd.Wipe(discord, message)
+		if err != nil {
+			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
+			log.Println(err)
+			return
+		}
 	//QUIT
 	case strings.Contains(userMessage, "!quit"):
+		isAdmin := auth.IsDiscordAdmin(discord, *message)
+
+		if !isAdmin {
+			return
+		}
+
 		// Send a confirmation message
 		discord.ChannelMessageSend(message.ChannelID, "Avicenne est maintenant hors ligne... Bye!")
 		err := discord.Close()
@@ -60,11 +81,11 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 		}
 	//HELP
 	case strings.Contains(userMessage, "!help"):
-		h.Help(discord, *message)
+		cmd.Help(discord, *message)
 	//ASK
 	case strings.HasPrefix(userMessage, "!ask"):
 		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!ask"))
-		err := h.Ask(discord, message, userPrompt)
+		err := cmd.Ask(discord, message, userPrompt)
 		if err != nil {
 			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
@@ -72,7 +93,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	//ASK PRIVATE
 	case strings.Contains(userMessage, "!private"):
 		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!ask private"))
-		err := h.AskPrivate(discord, message, userPrompt)
+		err := cmd.AskPrivate(discord, message, userPrompt)
 		if err != nil {
 			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
@@ -80,7 +101,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	//TRANSLATE
 	case strings.HasPrefix(userMessage, "!translate"):
 		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!translate"))
-		err := h.Translate(discord, message, userPrompt)
+		err := cmd.Translate(discord, message, userPrompt)
 		if err != nil {
 			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
@@ -88,7 +109,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	//SPELLCHECK
 	case strings.HasPrefix(userMessage, "!spellcheck"):
 		userPrompt := strings.TrimSpace(strings.TrimPrefix(userMessage, "!spellcheck"))
-		err := h.Spellcheck(discord, message, userPrompt)
+		err := cmd.Spellcheck(discord, message, userPrompt)
 		if err != nil {
 			discord.ChannelMessageSend(message.ChannelID, "Désolé, une erreur est survenue. Réessaie plus tard.")
 			return
