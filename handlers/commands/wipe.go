@@ -2,10 +2,12 @@ package commands
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
+	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 // Wipe deletes a specified number of messages within the channel
@@ -18,23 +20,27 @@ func Wipe(s *discordgo.Session, m *discordgo.MessageCreate) error {
 	// Get the number of messages to delete
 	parts := strings.Split(m.Content, " ")
 	if len(parts) < 2 {
+		log.Println("usage: !wipe <number_of_messages>")
 		return fmt.Errorf("usage: !wipe <number_of_messages>")
 	}
 
 	numMessages := parts[1]
 	num, err := strconv.Atoi(numMessages)
 	if err != nil {
+		log.Printf("invalid number of messages: %v", err)
 		return fmt.Errorf("invalid number of messages: %v", err)
 	}
 
 	// Ensure the number of messages is within a reasonable limit
 	if num <= 0 || num > 100 {
+		log.Println("number of messages must be between 1 and 100")
 		return fmt.Errorf("number of messages must be between 1 and 100")
 	}
 
 	// Fetch the messages from the channel
 	messages, err := s.ChannelMessages(m.ChannelID, num, "", "", "")
 	if err != nil {
+		log.Printf("failed to fetch messages: %v", err)
 		return fmt.Errorf("failed to fetch messages: %v", err)
 	}
 
@@ -48,6 +54,7 @@ func Wipe(s *discordgo.Session, m *discordgo.MessageCreate) error {
 	if len(messageIDs) > 0 {
 		err = s.ChannelMessagesBulkDelete(m.ChannelID, messageIDs)
 		if err != nil {
+			log.Printf("failed to delete messages: %v", err)
 			return fmt.Errorf("failed to delete messages: %v", err)
 		}
 	}
@@ -55,6 +62,7 @@ func Wipe(s *discordgo.Session, m *discordgo.MessageCreate) error {
 	// Send a confirmation message
 	confirmation, err := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleted %d messages.", len(messageIDs)))
 	if err != nil {
+		log.Printf("failed to send confirmation message: %v", err)
 		return fmt.Errorf("failed to send confirmation message: %v", err)
 	}
 

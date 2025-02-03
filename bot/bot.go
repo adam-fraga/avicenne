@@ -54,6 +54,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	//WIPE MESSAGES
 	case strings.Contains(userMessage, "!wipe"):
 		isAdmin := auth.IsDiscordAdmin(discord, *message)
+		log.Println("isAdmin: ", isAdmin)
 
 		if !isAdmin {
 			return
@@ -74,7 +75,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 		}
 
 		// Send a confirmation message
-		discord.ChannelMessageSend(message.ChannelID, "Avicenne est maintenant hors ligne... Bye!")
+		discord.ChannelMessageSend(message.ChannelID, "Avicen est maintenant hors ligne... Bye!")
 		err := discord.Close()
 		if err != nil {
 			discord.ChannelMessageSend(message.ChannelID, "Error while disconnecting: "+err.Error())

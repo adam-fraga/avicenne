@@ -5,15 +5,11 @@ import "github.com/bwmarrin/discordgo"
 func IsDiscordAdmin(discord *discordgo.Session, message discordgo.MessageCreate) bool {
 	// Check if the user haas admin role
 	for _, role := range message.Member.Roles {
-		guild, _ := discord.Guild(message.GuildID)
-		for _, guildRole := range guild.Roles {
-			if guildRole.ID == role {
-				if guildRole.Permissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
-					return true
-				}
-			}
+		if role == "1333866427743998044" {
+			return true
 		}
 	}
+
 	discord.ChannelMessageSend(message.ChannelID, "Désolé, vous n'avez pas la permission d'effectuer cette action.")
 	return false
 }
