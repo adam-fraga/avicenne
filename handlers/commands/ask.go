@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func AskHttpRequestAsync(url string, apiKey string, userMessage string, resultChan chan<- string, errChan chan<- error) {
+func AskHttpRequestAsync(url string, apiKey string, model string, userMessage string, resultChan chan<- string, errChan chan<- error) {
 	// Prepare HTTP request details
 	httpMethod := "POST"
 	headers := map[string]string{
@@ -22,7 +22,7 @@ func AskHttpRequestAsync(url string, apiKey string, userMessage string, resultCh
 
 	// Create the request body
 	requestBody := map[string]interface{}{
-		"model": "gpt-3.5-turbo",
+		"model": model,
 		"messages": []map[string]string{
 			{
 				"role":    "system",
@@ -33,6 +33,7 @@ func AskHttpRequestAsync(url string, apiKey string, userMessage string, resultCh
 				"content": userMessage,
 			},
 		},
+		"stream": false,
 	}
 
 	// Marshal the request body
@@ -56,7 +57,7 @@ func AskHttpRequestAsync(url string, apiKey string, userMessage string, resultCh
 
 	// Send the request with a timeout
 	client := &http.Client{
-		Timeout: 10 * time.Second, // 10 seconds timeout
+		Timeout: 60 * time.Second, // 10 seconds timeout
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -86,7 +87,13 @@ func Ask(discord *discordgo.Session, message *discordgo.MessageCreate, userPromp
 	resultChan := make(chan string)
 	errChan := make(chan error)
 
-	go AskHttpRequestAsync(os.Getenv("API_URL"), os.Getenv("API_TOKEN"), userPrompt, resultChan, errChan)
+	go AskHttpRequestAsync(
+		os.Getenv("API_URL"),
+		os.Getenv("API_TOKEN"),
+		os.Getenv("DSR1_MODEL"),
+		userPrompt,
+		resultChan,
+		errChan)
 
 	select {
 	case res := <-resultChan:

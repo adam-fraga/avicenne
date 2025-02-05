@@ -15,7 +15,13 @@ func Spellcheck(discord *discordgo.Session, message *discordgo.MessageCreate, us
 	spellcheckPrompt := fmt.Sprintf("Please check the spelling and grammar of the following text:\n\n %s", userPrompt)
 	discord.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Je vais vérifier l'orthographe et la grammaire du texte suivant pour toi..."))
 
-	go AskHttpRequestAsync(os.Getenv("API_URL"), os.Getenv("API_TOKEN"), spellcheckPrompt, resultChan, errChan)
+	go AskHttpRequestAsync(
+		os.Getenv("API_URL"),
+		os.Getenv("API_TOKEN"),
+		os.Getenv("DSR1_MODEL"),
+		spellcheckPrompt,
+		resultChan,
+		errChan)
 
 	select {
 	case res := <-resultChan:

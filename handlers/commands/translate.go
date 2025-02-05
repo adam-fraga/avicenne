@@ -25,7 +25,13 @@ func Translate(discord *discordgo.Session, message *discordgo.MessageCreate, use
 
 	discord.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Je vais traduire ça en %s pour toi...", targetLanguage))
 
-	go AskHttpRequestAsync(os.Getenv("API_URL"), os.Getenv("API_TOKEN"), translationPrompt, resultChan, errChan)
+	go AskHttpRequestAsync(
+		os.Getenv("API_URL"),
+		os.Getenv("API_TOKEN"),
+		os.Getenv("DSR1_MODEL"),
+		translationPrompt,
+		resultChan,
+		errChan)
 
 	select {
 	case res := <-resultChan:

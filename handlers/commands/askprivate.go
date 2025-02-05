@@ -12,7 +12,13 @@ func AskPrivate(discord *discordgo.Session, message *discordgo.MessageCreate, us
 	resultChan := make(chan string)
 	errChan := make(chan error)
 
-	go AskHttpRequestAsync(os.Getenv("API_URL"), os.Getenv("API_TOKEN"), userPrompt, resultChan, errChan)
+	go AskHttpRequestAsync(
+		os.Getenv("API_URL"),
+		os.Getenv("API_TOKEN"),
+		os.Getenv("DSR1_MODEL"),
+		userPrompt,
+		resultChan,
+		errChan)
 
 	channel, err := discord.UserChannelCreate(message.Author.ID)
 	if err != nil {
