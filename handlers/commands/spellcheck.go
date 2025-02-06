@@ -3,9 +3,9 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	h "github.com/adam-fraga/avicenne/http"
 	"github.com/bwmarrin/discordgo"
 	"log"
-	"os"
 )
 
 func Spellcheck(discord *discordgo.Session, message *discordgo.MessageCreate, userPrompt string) error {
@@ -15,10 +15,7 @@ func Spellcheck(discord *discordgo.Session, message *discordgo.MessageCreate, us
 	spellcheckPrompt := fmt.Sprintf("Please check the spelling and grammar of the following text:\n\n %s", userPrompt)
 	discord.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Je vais vérifier l'orthographe et la grammaire du texte suivant pour toi..."))
 
-	go AskHttpRequestAsync(
-		os.Getenv("API_URL"),
-		os.Getenv("API_TOKEN"),
-		os.Getenv("DSR1_MODEL"),
+	go h.HttpRequestAsync(
 		spellcheckPrompt,
 		resultChan,
 		errChan)

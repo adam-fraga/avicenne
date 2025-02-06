@@ -1,10 +1,12 @@
 package commands
 
+//Command ask a question to be answer by the LLM and send an aaanswer in a private discord chan
+
 import (
 	"encoding/json"
+	h "github.com/adam-fraga/avicenne/http"
 	"github.com/bwmarrin/discordgo"
 	"log"
-	"os"
 )
 
 func AskPrivate(discord *discordgo.Session, message *discordgo.MessageCreate, userPrompt string) error {
@@ -12,10 +14,7 @@ func AskPrivate(discord *discordgo.Session, message *discordgo.MessageCreate, us
 	resultChan := make(chan string)
 	errChan := make(chan error)
 
-	go AskHttpRequestAsync(
-		os.Getenv("API_URL"),
-		os.Getenv("API_TOKEN"),
-		os.Getenv("DSR1_MODEL"),
+	go h.HttpRequestAsync(
 		userPrompt,
 		resultChan,
 		errChan)

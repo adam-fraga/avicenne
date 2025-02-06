@@ -3,16 +3,16 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	h "github.com/adam-fraga/avicenne/http"
 	"github.com/bwmarrin/discordgo"
 	"log"
-	"os"
 	"strings"
 )
 
 func Translate(discord *discordgo.Session, message *discordgo.MessageCreate, userPrompt string) error {
 	parts := strings.SplitN(userPrompt, " ", 2) // Split into 2 parts: language and text
 	if len(parts) < 2 {
-		discord.ChannelMessageSend(message.ChannelID, "Veuillez fournir un texte à traduire.")
+		discord.ChannelMessageSend(message.ChannelID, "❌ Veuillez fournir un texte à traduire.")
 		return fmt.Errorf("invalid format for translation command")
 	}
 	resultChan := make(chan string)
@@ -25,10 +25,7 @@ func Translate(discord *discordgo.Session, message *discordgo.MessageCreate, use
 
 	discord.ChannelMessageSend(message.ChannelID, fmt.Sprintf("Je vais traduire ça en %s pour toi...", targetLanguage))
 
-	go AskHttpRequestAsync(
-		os.Getenv("API_URL"),
-		os.Getenv("API_TOKEN"),
-		os.Getenv("DSR1_MODEL"),
+	go h.HttpRequestAsync(
 		translationPrompt,
 		resultChan,
 		errChan)
